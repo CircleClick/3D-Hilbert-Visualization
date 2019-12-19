@@ -26,7 +26,7 @@ const draw = () => {
 
 const init = () => {
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, gridSize*2);
-    camera.position.y = gridSize/3;
+    camera.position.y = gridSize/2;
 
     scene = new THREE.Scene();
 
