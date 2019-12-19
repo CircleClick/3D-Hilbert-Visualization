@@ -36,8 +36,6 @@ const draw = () => {
 	//camera.position.x = (gridSize * 1.3);
 	camera.position.y = (gridSize * 0.25);
 	camera.position.z = (gridSize * 1.5);
-	
-	console.log(orbitX, orbitY)
 
 	group.rotation.y = orbitX;
 	group.rotation.x = -orbitY / 2;
