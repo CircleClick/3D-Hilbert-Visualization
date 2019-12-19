@@ -57,13 +57,13 @@ const init = () => {
 
 	const loader = new THREE.FontLoader();
 	loader.load('js/utils/open-sans.json', (font) => {
-		const yDataGroup = new THREE.Group();
+		/*const yDataGroup = new THREE.Group();
 		const yDataOutline = new THREE.GridHelper(
 			gridSize,
 			1,
 			0x222222,
 			0x222222);
-		yDataOutline.scale.x = 0.5;
+		yDataOutline.scale.x = 0.5;*/
 
 		/*const text_geometry = new THREE.TextBufferGeometry(`Test`, {
 			font: font,
@@ -80,7 +80,7 @@ const init = () => {
 		yDataGroup.position.y = gridSize / 2;
 		yDataGroup.position.x = -gridSize / 4;
 		yDataGroup.rotation.x = Math.PI / 2
-		yDataGroup.add(yDataOutline);
+		//yDataGroup.add(yDataOutline);
 		group.add(yDataGroup);
 	});
 
