@@ -93,25 +93,25 @@ const init = () => {
 		group.add(cube);
 	}*/
 	
-	const cube = makeCube(gridSize, 94);
-	scaleCube(cube, 2);
-	group.add(cube);
 
-	
-	const cube2 = makeCube(gridSize, 218);
-	scaleCube(cube2, 4);
-	cube2.position.y += 7;
-	group.add(cube2);
-	const cube2shadow = shadowCube(gridSize, 218, 7, 4);
-	group.add(cube2shadow);
+	for (let index = 0; index < 10; index++) {
+		const coord = Math.floor(Math.random()*(gridSize*gridSize))
+		const height = Math.random() * gridSize;
+		let scale = Math.floor(Math.random() * 5);
 
+		if (scale > 1 && Math.random() > 0.5) scale -= 1;
+		if (scale > 1 && Math.random() > 0.5) scale -= 1;
+
+		const cube = makeCube(gridSize, coord);
+		scaleCube(cube, scale)
+		cube.position.y += height;
+		group.add(cube);
+		const cubeShadow = shadowCube(gridSize, coord, height, scale);
+		group.add(cubeShadow);
+		
+	}
 	
 	
-	const cube3 = makeCube(gridSize, 162);
-	cube3.position.y += 3;
-	group.add(cube3);
-	const cube3shadow = shadowCube(gridSize, 162, 3, 1);
-	group.add(cube3shadow);
 
 
 	renderer = new THREE.WebGLRenderer({ antialias: true });
