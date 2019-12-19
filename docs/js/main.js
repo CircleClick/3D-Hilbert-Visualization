@@ -1,51 +1,147 @@
-let renderer, scene, camera, material, grid, orbit = 0;
+let renderer, scene, camera, material, group, grid, orbitX = 0, orbitY = 0;
+
+const lineMaterial = new THREE.LineBasicMaterial({
+	color: 0x222222,
+	linewidth: 1,
+	linecap: 'round', //ignored by WebGLRenderer
+	linejoin: 'round' //ignored by WebGLRenderer
+});
+const textMaterial = new THREE.MeshBasicMaterial({ color: 0x444444 });
 
 const gridSize = 16;
 
 import { Grid } from './components/index.js';
-import { gridAlign, makeCube } from './utils/index.js';
+import { gridAlign, makeCube, scaleCube, shadowCube } from './utils/index.js';
 
 const resize = () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix()
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix()
 }
 
 const draw = () => {
-	requestAnimationFrame( draw );
+	requestAnimationFrame(draw);
 
-    orbit+=0.01;
-    if(orbit > 360) orbit -= 360;
-    camera.position.z = (gridSize*1.3)*Math.cos(orbit);
-    camera.position.x = (gridSize*1.3)*Math.sin(orbit);
+    /*while (orbitX > 360) orbitX -= 360;
+	while (orbitX < 0) orbitX += 360;*/
 
-    camera.rotation.y = orbit;
+	/*
+	camera.position.z = (gridSize * 1.3) * Math.cos(orbitX);
+	camera.position.x = (gridSize * 1.3) * Math.sin(orbitX);
+	camera.position.y = (gridSize * 0.5);
 
-	renderer.render( scene, camera );
+	camera.rotation.y = orbitX;
+	*/
+
+	//camera.position.x = (gridSize * 1.3);
+	camera.position.y = (gridSize * 0.5);
+	camera.position.z = (gridSize * 2);
+
+	group.rotation.y = orbitX;
+	group.rotation.x = -orbitY / 2;
+
+	renderer.render(scene, camera);
 }
 
 const init = () => {
-    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, gridSize*2);
-    camera.position.y = gridSize/2;
+	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, gridSize * 3);
 
-    scene = new THREE.Scene();
+	group = new THREE.Group();
 
-    grid = new Grid({size: gridSize, divisions: gridSize});
-    scene.add(grid.grid)
+	scene = new THREE.Scene();
+	scene.add(group);
+	scene.background = new THREE.Color('#FFFFFF');
 
-    for (let n = 0; n < gridSize*gridSize; n++) {
-        const cube = makeCube(gridSize, n);
-        cube.position.y += Math.floor(n / gridSize)
-        scene.add(cube);
-    }
+	grid = new Grid({ size: gridSize, divisions: gridSize });
+	group.add(grid.group)
+
+	const loader = new THREE.FontLoader();
+	loader.load('/js/utils/open-sans.json', (font) => {
+		const yDataGroup = new THREE.Group();
+		const yDataOutline = new THREE.GridHelper(
+			gridSize,
+			1,
+			0x222222,
+			0x222222);
+		yDataOutline.scale.x = 0.5;
+
+		/*const text_geometry = new THREE.TextBufferGeometry(`Test`, {
+			font: font,
+			size: gridSize/8,
+			height: 0,
+		});
+		const text = new THREE.Mesh(text_geometry, new THREE.MeshBasicMaterial({ color: 0x444444 }));
+		text.rotation.x = -Math.PI/2;
+		text.position.x = -gridSize/4;
+		text.position.z = -gridSize/4;
+		yDataGroup.add(text);*/
+
+		yDataGroup.position.z = -gridSize / 2;
+		yDataGroup.position.y = gridSize / 2;
+		yDataGroup.position.x = -gridSize / 4;
+		yDataGroup.rotation.x = Math.PI / 2
+		yDataGroup.add(yDataOutline);
+		group.add(yDataGroup);
+	});
+
+	/*for (let n = 0; n < gridSize * gridSize; n++) {
+		const cube = makeCube(gridSize, n);
+		cube.data = {
+			distance: n,
+		}
+		cube.position.y += Math.floor(n / gridSize);
+		group.add(cube);
+	}*/
+	
+	const cube = makeCube(gridSize, 94);
+	scaleCube(cube, 2);
+	group.add(cube);
+
+	
+	const cube2 = makeCube(gridSize, 218);
+	scaleCube(cube2, 4);
+	cube2.position.y += 7;
+	group.add(cube2);
+	const cube2shadow = shadowCube(gridSize, 218, 7, 4);
+	group.add(cube2shadow);
+
+	
+	
+	const cube3 = makeCube(gridSize, 162);
+	cube3.position.y += 3;
+	group.add(cube3);
+	const cube3shadow = shadowCube(gridSize, 162, 3, 1);
+	group.add(cube3shadow);
 
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+	renderer = new THREE.WebGLRenderer({ antialias: true });
 
-    resize();
-    window.addEventListener('resize', resize);
-    document.body.appendChild(renderer.domElement);
-    draw();
+	resize();
+	window.addEventListener('resize', resize);
+	document.body.appendChild(renderer.domElement);
+	draw();
 }
+
+let click_startX = 0;
+let click_startY = 0;
+let startOrbitY = orbitY;
+let startorbitX = orbitX;
+let click_active = false;
+window.addEventListener('mousedown', (e) => {
+	click_startX = e.clientX;
+	click_startY = e.clientY;
+	startOrbitY = orbitY;
+	startorbitX = orbitX;
+	click_active = true;
+})
+window.addEventListener('mouseup', (e) => {
+	click_active = false;
+})
+window.addEventListener('mousemove', (e) => {
+	if (click_active) {
+		orbitX = startorbitX - (e.clientX - click_startX) / 200;
+		orbitY = startOrbitY - (e.clientY - click_startY) / 100;
+	}
+})
 
 document.addEventListener('DOMContentLoaded', init);
