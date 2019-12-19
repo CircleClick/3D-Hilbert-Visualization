@@ -1,4 +1,4 @@
-let renderer, scene, camera, material, group, grid, orbitX = -0.785, orbitY = 0.87;
+let renderer, scene, camera, material, group, grid, orbitX = 0.785, orbitY = 0.87;
 
 const lineMaterial = new THREE.LineBasicMaterial({
 	color: 0x222222,
@@ -37,7 +37,7 @@ const draw = () => {
 	camera.position.y = (gridSize * 0.25);
 	camera.position.z = (gridSize * 1.5);
 
-	group.rotation.y = -orbitX;
+	group.rotation.y = orbitX;
 	group.rotation.x = orbitY / 2;
 
 	renderer.render(scene, camera);
