@@ -56,7 +56,7 @@ const init = () => {
 	group.add(grid.group)
 
 	const loader = new THREE.FontLoader();
-	loader.load('/js/utils/open-sans.json', (font) => {
+	loader.load('utils/open-sans.json', (font) => {
 		const yDataGroup = new THREE.Group();
 		const yDataOutline = new THREE.GridHelper(
 			gridSize,

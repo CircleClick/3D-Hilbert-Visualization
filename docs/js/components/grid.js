@@ -20,7 +20,7 @@ export class Grid {
 		this.group.add(this.grid);
 
 		const loader = new THREE.FontLoader();
-		loader.load('/js/utils/open-sans.json', (font) => {
+		loader.load('https://circleclick.github.io/3D-Hilbert-Visualization/js/utils/open-sans.json', (font) => {
 			if (this.gridOptions.number && this.gridOptions.divisions <= 32) {
 				const target = this.gridOptions.divisions*this.gridOptions.divisions;
 				const ratio = this.gridOptions.size/this.gridOptions.divisions;
