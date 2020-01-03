@@ -6,6 +6,7 @@ export class Visualizer {
         this.options = Object.assign({
             domTarget: document.body,
             enableOrbitControls: true,
+            populateRandomData: false,
             gridSize: 16,
         }, options)
 
@@ -13,7 +14,7 @@ export class Visualizer {
 
         this.elements = [];
         this.camera = null;
-        window.requestAnimationFrame(this.init.bind(this));
+        this.init();
     }
 
     init () {
@@ -30,7 +31,7 @@ export class Visualizer {
         });
         this.group.add(grid.group);
 
-        this.populateRandomData();
+        if (this.options.populateRandomData) this.populateRandomData();
 
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -68,10 +69,18 @@ export class Visualizer {
             if (scale > 1 && Math.random() > 0.5) scale -= 1;
             if (scale > 1 && Math.random() > 0.5) scale -= 1;
 
-            const cube = makeCube(this.options.gridSize, coord);
-            scaleCube(cube, scale);
-            cube.position.y += height;
-            this.group.add(cube);
+            this.addCube(coord, height, scale);
+        }
+    }
+
+    addCube (distance = 1, height = 1, scale = 1) {
+        const coord = distance;
+
+        const cube = makeCube(this.options.gridSize, coord);
+        scaleCube(cube, scale);
+        cube.position.y += height;
+        this.group.add(cube);
+        if (height > 1) {
             const cubeShadow = shadowCube(this.options.gridSize, coord, height, scale);
             this.group.add(cubeShadow);
         }
