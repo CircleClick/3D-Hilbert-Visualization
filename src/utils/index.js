@@ -1,6 +1,7 @@
+import * as THREE from "three";
 import { distance2Point } from './hilbert.js';
 
-export function gridAlign(gridSize = 10, object, x, z) {
+export function gridAlign(gridSize = 65536, object, x, z) {
 	object.position.x = (x + 0.5) - (gridSize / 2);
 	object.position.z = (z + 0.5) - (gridSize / 2);
 	object.position.y = 0.5;
@@ -24,9 +25,9 @@ export function makeCube(gridSize, x, z = null, material = default_cube_material
 export function scaleCube(cube, scale) {
 	cube.scale.x = scale;
 	cube.scale.z = scale;
-	
-	cube.position.x += scale/2 - 0.5;
-	cube.position.z += scale/2 - 0.5;
+
+	cube.position.x += scale / 2 - 0.5;
+	cube.position.z += scale / 2 - 0.5;
 }
 
 export function shadowCube(gridSize, n, height, scale) {
@@ -35,7 +36,7 @@ export function shadowCube(gridSize, n, height, scale) {
 	shadow.material.transparent = true;
 	shadow.material.opacity = 0.25;
 	shadow.scale.y = height;
-	shadow.position.y += height/2 - 0.5;
+	shadow.position.y += height / 2 - 0.5;
 
 	scaleCube(shadow, scale);
 
