@@ -30,8 +30,24 @@ camera.position.z = 10;
 camera.position.y = 10;
 camera.lookAt(0, 0, 0);
 
+const cameraTarget = new THREE.Vector3(0, 0, 0);
+let cameraDistance = 30;
+
+function moveCameraToHilbert(number) {
+	const [x, y] = distance2Point(number);
+	cameraTarget.x = x;
+	cameraTarget.z = y;
+}
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#FFFFFF');
+
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(.5, 1, .25);
+scene.add(light);
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -73,11 +89,10 @@ function draw() {
 	const delta = Math.min(1, Math.max(0, (performance.now() - lastFrame) / 1000));
 	lastFrame = performance.now();
 
-	const camDist = 100;
-	camera.position.x = Math.sin(performance.now() / 10000) * camDist;
-	camera.position.z = Math.cos(performance.now() / 10000) * camDist;
-	camera.position.y = camDist / 2;
-	camera.lookAt(0, 0, 0);
+	camera.position.x = Math.sin(performance.now() / 10000) * cameraDistance + cameraTarget.x;
+	camera.position.z = Math.cos(performance.now() / 10000) * cameraDistance + cameraTarget.z;
+	camera.position.y = cameraDistance / 2 + cameraTarget.y;
+	camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z);
 
 	renderer.render(scene, camera);
 	if (stats) stats.end();
@@ -86,6 +101,7 @@ function draw() {
 
 import { Visualizer } from './components/index.js';
 import { gridAlign } from "./utils";
+import { distance2Point } from "./utils/hilbert";
 
 const ratio = (n) => {
 	return (n / 595001) * 16;
@@ -104,20 +120,21 @@ const taskQueue = [];
 
 const worker = new Worker(new URL('./worker.js', import.meta.url));
 worker.onmessage = (messages) => {
-	for (let i = 0; i < messages.length; i++) {
-		const {data, id} = messages[i];
+	for (let i = 0; i < messages.data.length; i++) {
+		const { data, id } = messages.data[i];
+		let taskFound = false;
 
 		for (let index = 0; index < taskQueue.length; index++) {
 			const element = taskQueue[index];
 			if (element.id === id) {
-				console.log("task done", id, performance.now() - element.timestamp);
 				element.resolve(data);
 				taskQueue.splice(index, 1);
-				return;
+				taskFound = true;
+				break;
 			}
 		}
 
-		console.log('task not found', id);
+		if (!taskFound) console.log('task not found', id, data);
 	}
 };
 
@@ -143,7 +160,10 @@ function getRangeGeometryAsync(start, end, geometryOptions = {}) {
 	});
 }
 
-getRangeGeometryAsync(0, 96).then(data => {
+
+
+async function spawnHilbertMesh(start, end) {
+	const data = await getRangeGeometryAsync(start, end);
 	const geometry = new THREE.BufferGeometry();
 
 	const geometryAttributes = data.attributes;
@@ -159,8 +179,9 @@ getRangeGeometryAsync(0, 96).then(data => {
 
 	const mesh = new THREE.Mesh(
 		geometry,
-		new THREE.MeshNormalMaterial({
+		new THREE.MeshPhongMaterial({
 			side: THREE.DoubleSide,
+			color: new THREE.Color(`hsl(${Math.random() * 360}, 75%, 60%)`),
 		})
 	);
 	mesh.rotation.x = Math.PI / 2;
@@ -168,4 +189,10 @@ getRangeGeometryAsync(0, 96).then(data => {
 	mesh.position.y = 1;
 
 	scene.add(mesh);
-})
+}
+
+spawnHilbertMesh(128, 192);
+spawnHilbertMesh(0, 32);
+spawnHilbertMesh(37, 64);
+
+moveCameraToHilbert(0);
