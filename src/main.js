@@ -42,6 +42,10 @@ function moveCameraToHilbert(number) {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#222222');
 
+const gridA = new THREE.GridHelper(65536 * config.scaleMultiplier, Math.round(65536 * 0.0025), 0x444444, 0x444444);
+gridA.position.set(65536 * config.scaleMultiplier * 0.5, 0, 65536 * config.scaleMultiplier * 0.5);
+scene.add(gridA);
+
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(.5, 1, .25);
 scene.add(light);
