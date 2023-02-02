@@ -16,6 +16,15 @@ if (query_vars.stats) {
 	stats.showPanel(1);
 	document.body.appendChild(stats.dom);
 }
+let api_url = 'https://ip-api.circleclick.com';
+if (query_vars.api_url) {
+	api_url = query_vars.api_url;
+}
+
+let IP_BLOCK = 185;
+if (query_vars.ip_block) {
+	IP_BLOCK = parseInt(query_vars.ip_block);
+}
 
 /*
 ** Initiate ThreejS scene
@@ -42,7 +51,7 @@ function moveCameraToHilbert(number) {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#222222');
 
-const gridA = new THREE.GridHelper(65536 * config.scaleMultiplier, Math.round(65536 * 0.0025), 0x444444, 0x444444);
+const gridA = new THREE.GridHelper(65536 * config.scaleMultiplier, 32, 0x774444, 0x444444);
 gridA.position.set(65536 * config.scaleMultiplier * 0.5, 0, 65536 * config.scaleMultiplier * 0.5);
 scene.add(gridA);
 
@@ -67,10 +76,10 @@ renderer.domElement.addEventListener('click', (e) => {
 	const intersects = raycaster.intersectObjects(scene.children);
 	if (intersects.length > 0) {
 		const intersect = intersects[0];
-		console.log(intersect.object.userData);
-
-		// open link in new tab
-		window.open(`https://ip-data-explorer.netlify.app/transfers/${intersect.object.userData.asset_start}/${new Date(intersect.object.userData.transfer_date).getTime()}`, '_blank');
+		if (intersect.object.userData && intersect.object.userData.asset_start) {
+			// open link in new tab
+			window.open(`https://ip-data-explorer.netlify.app/transfers/${intersect.object.userData.asset_start}/${new Date(intersect.object.userData.transfer_date).getTime()}`, '_blank');
+		}
 	}
 })
 
@@ -202,26 +211,11 @@ async function spawnHilbertMesh(start, end) {
 	return mesh;
 }
 
-moveCameraToHilbert(2147483648);
 
-fetch('https://ip-api.circleclick.com/org/rir/apnic').then(data => data.json()).then(async function (data) {
-	parseRecords(data.transfers);
+fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async function (data) {
+	moveCameraToHilbert(data[Math.round(data.length/2)].asset_start);
 
-	fetch('https://ip-api.circleclick.com/org/rir/ripe%20ncc').then(data => data.json()).then(async function (data) {
-		parseRecords(data.transfers);
-	});
-	fetch('https://ip-api.circleclick.com/org/rir/arin').then(data => data.json()).then(async function (data) {
-		parseRecords(data.transfers);
-	});
-	fetch('https://ip-api.circleclick.com/org/rir/afrinic').then(data => data.json()).then(async function (data) {
-		parseRecords(data.transfers);
-	});
-	fetch('https://ip-api.circleclick.com/org/rir/ripe').then(data => data.json()).then(async function (data) {
-		parseRecords(data.transfers);
-	});
-	fetch('https://ip-api.circleclick.com/org/rir/lacnic').then(data => data.json()).then(async function (data) {
-		parseRecords(data.transfers);
-	});
+	parseRecords(data);
 });
 
 
@@ -232,7 +226,6 @@ async function parseRecords(records) {
 			const transfer_timestamp = new Date(element.transfer_date).getTime();
 			const previous_timestamp = new Date(element.previous_date).getTime();
 			const delta = transfer_timestamp - previous_timestamp;
-
 
 			mesh.position.y = (transfer_timestamp / Date.now()) * config.mapHeight * config.scaleMultiplier;
 			mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;

@@ -1,9 +1,9 @@
 
 const config = {
 	mapHeight: 1000,
-	cameraDistance: 65536 * 0.01,
+	cameraDistance: 65536 * 0.002,
 	scaleMultiplier: 0.05,
-	geometryBatchSize: 16,
+	geometryBatchSize: 32,
 	workerThreads: 4,
 }
 
