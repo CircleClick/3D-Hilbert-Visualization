@@ -39,17 +39,24 @@ self.onmessage = ({ data: { type, data, id } }) => {
 			getHilbertOutline(data);
 			break;
 		case "hilbert_geometry":
-			const geometry = hilbertGeometry(data.start, data.end, data.geometryOptions);
+			const geometry = hilbertGeometry(data.start, data.end, data.geometryOptions).toNonIndexed();
 
-			const attributes = {
-				position: geometry.getAttribute('position'),
-				normal: geometry.getAttribute('normal'),
-				uv: geometry.getAttribute('uv'),
-			};
+			const attributes = {};
+
+			for (const key in geometry.attributes) {
+				if (Object.hasOwnProperty.call(geometry.attributes, key)) {
+					const element = geometry.attributes[key];
+					attributes[key] = {
+						array: element.array,
+						itemSize: element.itemSize,
+					};
+				}
+			}
 
 			queueMessage({
 				data: {
 					attributes,
+					groups: geometry.groups,
 				},
 				id: data.id,
 			});

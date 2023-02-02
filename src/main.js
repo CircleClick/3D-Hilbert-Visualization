@@ -2,10 +2,13 @@ import * as THREE from "three";
 import Stats from "stats-js";
 import "./main.css";
 
+// how many units tall the "timescale" is
+let mapHeight = 1000;
+let cameraDistance = 65536 * 0.1;
 
 // the following few lines of code will allow you to add ?channels=channel1,channel2,channel3 to the URL in order to override the default array of channels
 const query_vars = {};
-const query_parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
 	query_vars[key] = value;
 });
 
@@ -24,14 +27,13 @@ const camera = new THREE.PerspectiveCamera(
 	70,
 	window.innerWidth / window.innerHeight,
 	0.1,
-	65536 * 2
+	65536 * 4
 );
 camera.position.z = 10;
 camera.position.y = 10;
 camera.lookAt(0, 0, 0);
 
 const cameraTarget = new THREE.Vector3(0, 0, 0);
-let cameraDistance = 30;
 
 function moveCameraToHilbert(number) {
 	const [x, y] = distance2Point(number);
@@ -49,7 +51,7 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 function resize() {
@@ -64,18 +66,6 @@ window.addEventListener('DOMContentLoaded', () => {
 	window.addEventListener('resize', resize);
 	if (stats) document.body.appendChild(stats.dom);
 	document.body.appendChild(renderer.domElement);
-
-	visualizer.addCube(172, ratio(167987), 1);
-	visualizer.addCube(179, ratio(49033), 1);
-	visualizer.addCube(155, ratio(595001), 1);
-	visualizer.addCube(139, ratio(1182), 1);
-	visualizer.addCube(210, ratio(474), 1);
-	visualizer.addCube(240, ratio(870), 1);
-	visualizer.addCube(151, ratio(16361), 1);
-	visualizer.addCube(114, ratio(4148), 1);
-	visualizer.addCube(187, ratio(312), 1);
-	visualizer.addCube(135, ratio(202), 1);
-
 	draw();
 })
 
@@ -89,9 +79,9 @@ function draw() {
 	const delta = Math.min(1, Math.max(0, (performance.now() - lastFrame) / 1000));
 	lastFrame = performance.now();
 
-	camera.position.x = Math.sin(performance.now() / 10000) * cameraDistance + cameraTarget.x;
-	camera.position.z = Math.cos(performance.now() / 10000) * cameraDistance + cameraTarget.z;
-	camera.position.y = cameraDistance / 2 + cameraTarget.y;
+	camera.position.x = Math.sin(performance.now() / 10000 + Math.PI) * cameraDistance + cameraTarget.x;
+	camera.position.z = Math.cos(performance.now() / 10000 + Math.PI) * cameraDistance + cameraTarget.z;
+	camera.position.y = cameraDistance + cameraTarget.y;
 	camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z);
 
 	renderer.render(scene, camera);
@@ -99,21 +89,7 @@ function draw() {
 };
 
 
-import { Visualizer } from './components/index.js';
-import { gridAlign } from "./utils";
 import { distance2Point } from "./utils/hilbert";
-
-const ratio = (n) => {
-	return (n / 595001) * 16;
-}
-
-
-const visualizer = new Visualizer({
-	populateRandomData: false,
-	renderer: renderer,
-	scene: scene,
-});
-
 
 let currentTaskID = 0;
 const taskQueue = [];
@@ -180,19 +156,40 @@ async function spawnHilbertMesh(start, end) {
 	const mesh = new THREE.Mesh(
 		geometry,
 		new THREE.MeshPhongMaterial({
-			side: THREE.DoubleSide,
 			color: new THREE.Color(`hsl(${Math.random() * 360}, 75%, 60%)`),
 		})
 	);
 	mesh.rotation.x = Math.PI / 2;
 
-	mesh.position.y = 1;
+	mesh.position.y = 1 + Math.random() * 0.1;
 
 	scene.add(mesh);
+
+	return mesh;
 }
 
-spawnHilbertMesh(128, 192);
-spawnHilbertMesh(0, 32);
-spawnHilbertMesh(37, 64);
-
 moveCameraToHilbert(0);
+
+fetch('https://ip-api.circleclick.com/org/company/amazon%20technologies%20inc.').then(data => data.json()).then(async function (data) {
+	console.log('adding geometry');
+	moveCameraToHilbert(data.transfers[0].asset_start);
+
+	for (let i = 0; i < data.transfers.length; i++) {
+		const element = data.transfers[i];
+		const mesh = await spawnHilbertMesh(element.asset_start, element.asset_end)
+		const transfer_timestamp = new Date(element.transfer_date).getTime();
+		const previous_timestamp = new Date(element.previous_date).getTime();
+		const delta = transfer_timestamp - previous_timestamp;
+
+		mesh.position.y = (transfer_timestamp / Date.now()) * mapHeight;
+		mesh.scale.z = (delta / Date.now()) * mapHeight;
+
+		if (i === 0) cameraTarget.y = mesh.position.y;
+
+		await sleep(1);
+	}
+});
+
+function sleep(time) {
+	return new Promise((resolve) => setTimeout(resolve, time));
+}

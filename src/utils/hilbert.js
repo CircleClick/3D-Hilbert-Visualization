@@ -1,4 +1,4 @@
-import { ExtrudeGeometry, Shape, ShapeGeometry, Vector2 } from "three";
+import { BoxGeometry, ExtrudeGeometry, Shape, ShapeGeometry, Vector2 } from "three";
 
 /**
  * Hilbert curve rotation function
@@ -18,6 +18,36 @@ function rot(n, xy, rx, ry) {
 		xy.push(xy.shift());
 	}
 }
+
+const getMinMax = (points) => {
+	let minX = Infinity;
+	let minY = Infinity;
+	let maxX = -Infinity;
+	let maxY = -Infinity;
+
+	for (let index = 0; index < points.length; index++) {
+		const point = points[index];
+		if (point[0] < minX) {
+			minX = point[0];
+		}
+		if (point[0] > maxX) {
+			maxX = point[0];
+		}
+		if (point[1] < minY) {
+			minY = point[1];
+		}
+		if (point[1] > maxY) {
+			maxY = point[1];
+		}
+	}
+
+	return {
+		minX,
+		minY,
+		maxX,
+		maxY,
+	};
+};
 
 // Note: this function will start breaking down for n > 2^26 (MAX_SAFE_INTEGER = 2^5 3)
 // x,y: cell coordinates, n: sqrt of num cells (square side size)
@@ -142,8 +172,8 @@ export function outlinePoints(points) {
 	while (true) {
 		// find a point set to 2 which is adjacent to the current point
 		let nextPoint = false;
-		for (let index = 0; index < cardinalDirections.length; index++) {
-			const direction = cardinalDirections[index];
+		for (let index = 0; index < allDirections.length; index++) {
+			const direction = allDirections[index];
 			const x = currentPoint.x + direction.x;
 			const y = currentPoint.y + direction.y;
 			if (getGridValue(x, y) === 2) {
@@ -228,23 +258,33 @@ const diagonalDirections = [
 
 const allDirections = cardinalDirections.concat(diagonalDirections);
 
+const checkIfPointsMakeRectangle = (points) => {
+	const { minX, minY, maxX, maxY } = getMinMax(points);
 
-function getOutlineBounds(outline) {
-	let minX = false;
-	let minY = false;
-	let maxX = false;
-	let maxY = false;
+	const width = maxX - minX;
+	const height = maxY - minY;
+	const area = width * height;
 
-	for (let index = 0; index < outline.length; index++) {
-		const element = outline[index];
-		const [x, y] = element;
-		if (!minX || x < minX) minX = x;
-		if (!minY || y < minY) minY = y;
-		if (!maxX || x > maxX) maxX = x;
-		if (!maxY || y > maxY) maxY = y;
+	const pointsInRectangle = [];
+
+	for (let i = 0; i < points.length; i++) {
+		const point = points[i];
+		const [x, y] = point;
+
+		if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+			pointsInRectangle.push(point);
+		}
 	}
 
-	return { minX, minY, maxX, maxY };
+
+	if (pointsInRectangle.length / area < 0.9) return false;
+
+	const geometry = new BoxGeometry(maxX - minX, maxY - minY, 1);
+
+	geometry.translate(0, 0, 0.5);
+	geometry.translate(minX + (maxX - minX) / 2, minY + (maxY - minY) / 2, 0);
+
+	return geometry;
 }
 
 /**
@@ -259,24 +299,28 @@ export function hilbertGeometry(start, end, geometryOptions = {}) {
 		points.push(distance2Point(i));
 	}
 
-	const outline = outlinePoints(points);
+	const rectangle = checkIfPointsMakeRectangle(points);
+	if (rectangle) {
+		return rectangle;
+	} else {
+		const outline = outlinePoints(points);
+		const shape = new Shape();
 
-	const shape = new Shape();
-
-	for (let index = 0; index < outline.length; index++) {
-		const element = outline[index];
-		if (index === 0) {
-			shape.moveTo(element[0], element[1]);
-		} else {
-			shape.lineTo(element[0], element[1]);
+		for (let index = 0; index < outline.length; index++) {
+			const element = outline[index];
+			if (index === 0) {
+				shape.moveTo(element[0], element[1]);
+			} else {
+				shape.lineTo(element[0], element[1]);
+			}
 		}
+
+		const geometry = new ExtrudeGeometry(shape, {
+			depth: 1,
+			bevelEnabled: false,
+			...geometryOptions,
+		});
+
+		return geometry;
 	}
-
-	const geometry = new ExtrudeGeometry(shape, {
-		depth: 1,
-		bevelEnabled: false,
-		...geometryOptions,
-	});
-
-	return geometry;
 }
