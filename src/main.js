@@ -218,6 +218,7 @@ fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async functi
 	parseRecords(data);
 });
 
+const minDate = new Date('Thu Feb 02 1999').getTime();
 
 async function parseRecords(records) {
 	for (let i = 0; i < records.length; i++) {
@@ -227,7 +228,8 @@ async function parseRecords(records) {
 			const previous_timestamp = new Date(element.previous_date).getTime();
 			const delta = transfer_timestamp - previous_timestamp;
 
-			mesh.position.y = (transfer_timestamp / Date.now()) * config.mapHeight * config.scaleMultiplier;
+			mesh.position.y = ((transfer_timestamp - minDate) / (Date.now() - minDate)) * config.mapHeight * config.scaleMultiplier;
+			mesh.position.y += Math.random() * 0.01 * config.mapHeight * config.scaleMultiplier;
 			//mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
 
 			mesh.userData = element;

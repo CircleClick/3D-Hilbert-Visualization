@@ -1,4 +1,4 @@
-import { BoxGeometry, ExtrudeGeometry, Shape, ShapeGeometry, Vector2 } from "three";
+import { BoxGeometry, ExtrudeGeometry, Shape, Vector2 } from "three";
 import config from "../config";
 
 /**
