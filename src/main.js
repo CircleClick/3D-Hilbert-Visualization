@@ -213,7 +213,7 @@ async function spawnHilbertMesh(start, end) {
 
 
 fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async function (data) {
-	moveCameraToHilbert(data[Math.round(data.length/2)].asset_start);
+	moveCameraToHilbert(data[Math.round(data.length / 2)].asset_start);
 
 	parseRecords(data);
 });
@@ -228,7 +228,7 @@ async function parseRecords(records) {
 			const delta = transfer_timestamp - previous_timestamp;
 
 			mesh.position.y = (transfer_timestamp / Date.now()) * config.mapHeight * config.scaleMultiplier;
-			mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
+			//mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
 
 			mesh.userData = element;
 		})
