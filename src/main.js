@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import Stats from "stats-js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./main.css";
 
 import config from "./config";
+
 
 // the following few lines of code will allow you to add ?channels=channel1,channel2,channel3 to the URL in order to override the default array of channels
 const query_vars = {};
@@ -40,12 +42,19 @@ camera.position.z = 10;
 camera.position.y = 10;
 camera.lookAt(0, 0, 0);
 
-const cameraTarget = new THREE.Vector3(0, 0, 0);
 
 function moveCameraToHilbert(number) {
 	const [x, y] = distance2Point(number);
-	cameraTarget.x = x * config.scaleMultiplier;
-	cameraTarget.z = y * config.scaleMultiplier;
+
+	controls.target.x = x * config.scaleMultiplier;
+	controls.target.z = y * config.scaleMultiplier;
+
+
+	camera.position.set(
+		x * config.scaleMultiplier + config.cameraDistance,
+		config.cameraDistance,
+		y * config.scaleMultiplier + config.cameraDistance,
+	)
 }
 
 const scene = new THREE.Scene();
@@ -65,7 +74,39 @@ scene.add(ambientLight);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-renderer.domElement.addEventListener('click', (e) => {
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.listenToKeyEvents(window);
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+
+let lastMouseDown = {
+	x: 0,
+	y: 0,
+	time: 0,
+};
+
+renderer.domElement.addEventListener('mousedown', (e) => {
+	controls.autoRotate = false;
+	lastMouseDown = {
+		x: e.clientX,
+		y: e.clientY,
+		time: new Date().getTime(),
+	};
+});
+renderer.domElement.addEventListener('touchstart', e => {
+	controls.autoRotate = false;
+	lastMouseDown = {
+		x: e.touches[0].clientX,
+		y: e.touches[0].clientY,
+		time: new Date().getTime(),
+	};
+})
+renderer.domElement.addEventListener('mouseup', (e) => {
+	const totalDist = Math.abs(e.clientX - lastMouseDown.x) + Math.abs(e.clientY - lastMouseDown.y);
+	if (totalDist > 5) {
+		return
+	}
+
 	const mouse = new THREE.Vector2();
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 	mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -109,10 +150,7 @@ function draw() {
 	const delta = Math.min(1, Math.max(0, (performance.now() - lastFrame) / 1000));
 	lastFrame = performance.now();
 
-	camera.position.x = Math.sin(performance.now() / 10000 + Math.PI) * config.cameraDistance + cameraTarget.x;
-	camera.position.z = Math.cos(performance.now() / 10000 + Math.PI) * config.cameraDistance + cameraTarget.z;
-	camera.position.y = config.cameraDistance + cameraTarget.y;
-	camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z);
+	controls.update();
 
 	renderer.render(scene, camera);
 	if (stats) stats.end();
@@ -120,6 +158,7 @@ function draw() {
 
 
 import { distance2Point } from "./utils/hilbert";
+import getCompanyColor from "./utils/getCompanyColor";
 
 let currentTaskID = 0;
 const taskQueue = [];
@@ -181,7 +220,7 @@ function getRangeGeometryAsync(start, end, geometryOptions = {}) {
 
 
 
-async function spawnHilbertMesh(start, end) {
+async function spawnHilbertMesh(start, end, name = 'hilbert') {
 	const data = await getRangeGeometryAsync(start, end);
 	const geometry = new THREE.BufferGeometry();
 
@@ -196,10 +235,11 @@ async function spawnHilbertMesh(start, end) {
 		}
 	}
 
+
 	const mesh = new THREE.Mesh(
 		geometry,
 		new THREE.MeshPhongMaterial({
-			color: new THREE.Color(`hsl(${Math.random() * 360}, 75%, 60%)`),
+			color: new THREE.Color(getCompanyColor(name)),
 		})
 	);
 	mesh.rotation.x = Math.PI / 2;
@@ -218,12 +258,12 @@ fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async functi
 	parseRecords(data);
 });
 
-const minDate = new Date('Thu Feb 02 1999').getTime();
+const minDate = new Date('Thu Feb 02 2010').getTime();
 
 async function parseRecords(records) {
 	for (let i = 0; i < records.length; i++) {
 		const element = records[i];
-		spawnHilbertMesh(element.asset_start, element.asset_end).then(mesh => {
+		spawnHilbertMesh(element.asset_start, element.asset_end, element.to_org || "unknown").then(mesh => {
 			const transfer_timestamp = new Date(element.transfer_date).getTime();
 			const previous_timestamp = new Date(element.previous_date).getTime();
 			const delta = transfer_timestamp - previous_timestamp;
