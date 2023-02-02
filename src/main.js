@@ -198,33 +198,41 @@ async function spawnHilbertMesh(start, end) {
 	return mesh;
 }
 
-moveCameraToHilbert(0);
+moveCameraToHilbert(2147483648);
 
-fetch('https://ip-api.circleclick.com/org/company/amazon%20technologies%20inc.').then(data => data.json()).then(async function (data) {
-	console.log('adding geometry');
+fetch('https://ip-api.circleclick.com/org/rir/apnic').then(data => data.json()).then(async function (data) {
+	parseRecords(data.transfers);
 
-	let minTimestamp = Infinity;
-	for (let index = 0; index < data.transfers.length; index++) {
-		const element = data.transfers[index];
-		const stamp = new Date(element.transfer_date).getTime();
-		if (stamp < minTimestamp) minTimestamp = stamp;
-	}
+	fetch('https://ip-api.circleclick.com/org/rir/ripe%20ncc').then(data => data.json()).then(async function (data) {
+		parseRecords(data.transfers);
+	});
+	fetch('https://ip-api.circleclick.com/org/rir/arin').then(data => data.json()).then(async function (data) {
+		parseRecords(data.transfers);
+	});
+	fetch('https://ip-api.circleclick.com/org/rir/afrinic').then(data => data.json()).then(async function (data) {
+		parseRecords(data.transfers);
+	});
+	fetch('https://ip-api.circleclick.com/org/rir/ripe').then(data => data.json()).then(async function (data) {
+		parseRecords(data.transfers);
+	});
+	fetch('https://ip-api.circleclick.com/org/rir/lacnic').then(data => data.json()).then(async function (data) {
+		parseRecords(data.transfers);
+	});
+});
 
-	for (let i = 0; i < data.transfers.length; i++) {
-		const element = data.transfers[i];
+
+async function parseRecords(records) {
+	for (let i = 0; i < records.length; i++) {
+		const element = records[i];
 		spawnHilbertMesh(element.asset_start, element.asset_end).then(mesh => {
-			const transfer_timestamp = new Date(element.transfer_date).getTime() - minTimestamp;
-			const previous_timestamp = new Date(element.previous_date).getTime() - minTimestamp;
+			const transfer_timestamp = new Date(element.transfer_date).getTime();
+			const previous_timestamp = new Date(element.previous_date).getTime();
 			const delta = transfer_timestamp - previous_timestamp;
 
 
-			mesh.position.y = (transfer_timestamp / (Date.now() - minTimestamp) + Math.random()) * config.mapHeight * config.scaleMultiplier;
-			//mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
+			mesh.position.y = (transfer_timestamp / Date.now()) * config.mapHeight * config.scaleMultiplier;
+			mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
 
-			if (i === 0) {
-				moveCameraToHilbert(element.asset_start);
-				cameraTarget.y = mesh.position.y;
-			}
 			mesh.userData = element;
 		})
 
@@ -233,8 +241,7 @@ fetch('https://ip-api.circleclick.com/org/company/amazon%20technologies%20inc.')
 		}
 
 	}
-});
-
+}
 function sleep(time) {
 	return new Promise((resolve) => setTimeout(resolve, time));
 }
