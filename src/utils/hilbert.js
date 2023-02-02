@@ -1,4 +1,5 @@
 import { BoxGeometry, ExtrudeGeometry, Shape, ShapeGeometry, Vector2 } from "three";
+import config from "../config";
 
 /**
  * Hilbert curve rotation function
@@ -77,7 +78,8 @@ export function point2Distance(xCoordinate, yCoordinate, squareSideSize = 65536)
  * @param {Number} squareSideSize 
  * @returns Array [x, y]
  */
-export function distance2Point(distance, squareSideSize = 65536) {
+export function distance2Point(distance) {
+	const squareSideSize = 65536;
 	let xCoordinate, yCoordinate, currentDistance = distance,
 		coordinates = [0, 0];
 
@@ -279,10 +281,17 @@ const checkIfPointsMakeRectangle = (points) => {
 
 	if (pointsInRectangle.length / area < 0.9) return false;
 
-	const geometry = new BoxGeometry(maxX - minX, maxY - minY, 1);
+	const geometry = new BoxGeometry(
+		(maxX - minX) * config.scaleMultiplier,
+		(maxY - minY) * config.scaleMultiplier,
+		1
+	);
 
-	geometry.translate(0, 0, 0.5);
-	geometry.translate(minX + (maxX - minX) / 2, minY + (maxY - minY) / 2, 0);
+	geometry.translate(
+		(minX + (maxX - minX) / 2) * config.scaleMultiplier,
+		(minY + (maxY - minY) / 2) * config.scaleMultiplier,
+		0.5
+	);
 
 	return geometry;
 }
@@ -309,9 +318,9 @@ export function hilbertGeometry(start, end, geometryOptions = {}) {
 		for (let index = 0; index < outline.length; index++) {
 			const element = outline[index];
 			if (index === 0) {
-				shape.moveTo(element[0], element[1]);
+				shape.moveTo(element[0] * config.scaleMultiplier, element[1] * config.scaleMultiplier);
 			} else {
-				shape.lineTo(element[0], element[1]);
+				shape.lineTo(element[0] * config.scaleMultiplier, element[1] * config.scaleMultiplier);
 			}
 		}
 

@@ -2,8 +2,16 @@ import * as THREE from "three";
 import { distance2Point, hilbertGeometry, outlinePoints } from "./utils/hilbert";
 
 let messageQueue = [];
+let timeout = false;
 function queueMessage (message) {
 	messageQueue.push(message);
+	if (!timeout) {
+		timeout = true;
+		setTimeout(() => {
+			checkMessageQueue();
+			timeout = false;
+		}, 10);
+	}
 }
 function checkMessageQueue () {
 	if (messageQueue.length > 0) {
@@ -12,7 +20,6 @@ function checkMessageQueue () {
 	}
 }
 
-setInterval(checkMessageQueue, 250);
 
 function getHilbertOutline(data) {
 	const points = [];

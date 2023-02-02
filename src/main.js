@@ -2,9 +2,7 @@ import * as THREE from "three";
 import Stats from "stats-js";
 import "./main.css";
 
-// how many units tall the "timescale" is
-let mapHeight = 1000;
-let cameraDistance = 65536 * 0.1;
+import config from "./config";
 
 // the following few lines of code will allow you to add ?channels=channel1,channel2,channel3 to the URL in order to override the default array of channels
 const query_vars = {};
@@ -37,12 +35,12 @@ const cameraTarget = new THREE.Vector3(0, 0, 0);
 
 function moveCameraToHilbert(number) {
 	const [x, y] = distance2Point(number);
-	cameraTarget.x = x;
-	cameraTarget.z = y;
+	cameraTarget.x = x * config.scaleMultiplier;
+	cameraTarget.z = y * config.scaleMultiplier;
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#FFFFFF');
+scene.background = new THREE.Color('#222222');
 
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(.5, 1, .25);
@@ -51,8 +49,27 @@ scene.add(light);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+renderer.domElement.addEventListener('click', (e) => {
+	const mouse = new THREE.Vector2();
+	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+	mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+	const raycaster = new THREE.Raycaster();
+	raycaster.setFromCamera(mouse, camera);
+
+	const intersects = raycaster.intersectObjects(scene.children);
+	if (intersects.length > 0) {
+		const intersect = intersects[0];
+		console.log(intersect.object.userData);
+
+		// open link in new tab
+		window.open(`https://ip-data-explorer.netlify.app/transfers/${intersect.object.userData.asset_start}/${new Date(intersect.object.userData.transfer_date).getTime()}`, '_blank');
+	}
+})
+
 
 function resize() {
 	const width = window.innerWidth;
@@ -79,9 +96,9 @@ function draw() {
 	const delta = Math.min(1, Math.max(0, (performance.now() - lastFrame) / 1000));
 	lastFrame = performance.now();
 
-	camera.position.x = Math.sin(performance.now() / 10000 + Math.PI) * cameraDistance + cameraTarget.x;
-	camera.position.z = Math.cos(performance.now() / 10000 + Math.PI) * cameraDistance + cameraTarget.z;
-	camera.position.y = cameraDistance + cameraTarget.y;
+	camera.position.x = Math.sin(performance.now() / 10000 + Math.PI) * config.cameraDistance + cameraTarget.x;
+	camera.position.z = Math.cos(performance.now() / 10000 + Math.PI) * config.cameraDistance + cameraTarget.z;
+	camera.position.y = config.cameraDistance + cameraTarget.y;
 	camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z);
 
 	renderer.render(scene, camera);
@@ -93,9 +110,7 @@ import { distance2Point } from "./utils/hilbert";
 
 let currentTaskID = 0;
 const taskQueue = [];
-
-const worker = new Worker(new URL('./worker.js', import.meta.url));
-worker.onmessage = (messages) => {
+const workerListener = (messages) => {
 	for (let i = 0; i < messages.data.length; i++) {
 		const { data, id } = messages.data[i];
 		let taskFound = false;
@@ -113,6 +128,21 @@ worker.onmessage = (messages) => {
 		if (!taskFound) console.log('task not found', id, data);
 	}
 };
+const workers = [];
+for (let i = 0; i < config.workerThreads; i++) {
+	const worker = new Worker(new URL('./worker.js', import.meta.url));
+	worker.onmessage = workerListener;
+	workers.push(worker);
+}
+
+let workerIndex = 0;
+function getWorker() {
+	const worker = workers[workerIndex];
+	workerIndex++;
+	if (workerIndex >= workers.length) workerIndex = 0;
+	return worker;
+}
+
 
 
 function getRangeGeometryAsync(start, end, geometryOptions = {}) {
@@ -124,7 +154,7 @@ function getRangeGeometryAsync(start, end, geometryOptions = {}) {
 			resolve: resolve,
 			reject: reject,
 		});
-		worker.postMessage({
+		getWorker().postMessage({
 			type: "hilbert_geometry",
 			data: {
 				start: start,
@@ -172,21 +202,36 @@ moveCameraToHilbert(0);
 
 fetch('https://ip-api.circleclick.com/org/company/amazon%20technologies%20inc.').then(data => data.json()).then(async function (data) {
 	console.log('adding geometry');
-	moveCameraToHilbert(data.transfers[0].asset_start);
+
+	let minTimestamp = Infinity;
+	for (let index = 0; index < data.transfers.length; index++) {
+		const element = data.transfers[index];
+		const stamp = new Date(element.transfer_date).getTime();
+		if (stamp < minTimestamp) minTimestamp = stamp;
+	}
 
 	for (let i = 0; i < data.transfers.length; i++) {
 		const element = data.transfers[i];
-		const mesh = await spawnHilbertMesh(element.asset_start, element.asset_end)
-		const transfer_timestamp = new Date(element.transfer_date).getTime();
-		const previous_timestamp = new Date(element.previous_date).getTime();
-		const delta = transfer_timestamp - previous_timestamp;
+		spawnHilbertMesh(element.asset_start, element.asset_end).then(mesh => {
+			const transfer_timestamp = new Date(element.transfer_date).getTime() - minTimestamp;
+			const previous_timestamp = new Date(element.previous_date).getTime() - minTimestamp;
+			const delta = transfer_timestamp - previous_timestamp;
 
-		mesh.position.y = (transfer_timestamp / Date.now()) * mapHeight;
-		mesh.scale.z = (delta / Date.now()) * mapHeight;
 
-		if (i === 0) cameraTarget.y = mesh.position.y;
+			mesh.position.y = (transfer_timestamp / (Date.now() - minTimestamp) + Math.random()) * config.mapHeight * config.scaleMultiplier;
+			//mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
 
-		await sleep(1);
+			if (i === 0) {
+				moveCameraToHilbert(element.asset_start);
+				cameraTarget.y = mesh.position.y;
+			}
+			mesh.userData = element;
+		})
+
+		if (i % config.geometryBatchSize === 0 && i !== 0) {
+			await sleep(1000);
+		}
+
 	}
 });
 
