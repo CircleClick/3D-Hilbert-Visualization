@@ -23,7 +23,7 @@ if (query_vars.api_url) {
 	api_url = query_vars.api_url;
 }
 
-let IP_BLOCK = 185;
+let IP_BLOCK = 67;
 if (query_vars.ip_block) {
 	IP_BLOCK = parseInt(query_vars.ip_block);
 }
