@@ -60,6 +60,15 @@ function moveCameraToHilbert(number) {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#222222');
 
+const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const cubeMaterial = new THREE.MeshPhongMaterial({
+	color: 0xffffff,
+});
+const cubeInstance = new THREE.InstancedMesh(cubeGeometry, cubeMaterial, 65536);
+cubeInstance.setColorAt(0, new THREE.Color(0x00ff00));
+cubeInstance.count = 0;
+scene.add(cubeInstance);
+
 const gridA = new THREE.GridHelper(65536 * config.scaleMultiplier, 32, 0x774444, 0x444444);
 gridA.position.set(65536 * config.scaleMultiplier * 0.5, 0, 65536 * config.scaleMultiplier * 0.5);
 scene.add(gridA);
@@ -222,33 +231,57 @@ function getRangeGeometryAsync(start, end, geometryOptions = {}) {
 
 async function spawnHilbertMesh(start, end, name = 'hilbert') {
 	const data = await getRangeGeometryAsync(start, end);
-	const geometry = new THREE.BufferGeometry();
 
-	const geometryAttributes = data.attributes;
-	for (const key in geometryAttributes) {
-		if (Object.hasOwnProperty.call(geometryAttributes, key)) {
-			const value = geometryAttributes[key];
-			geometry.setAttribute(
-				key,
-				new THREE.BufferAttribute(value.array, value.itemSize)
-			);
+	const companyColor = new THREE.Color(getCompanyColor(name));
+
+	if (data.isCube) {
+		const dummy = new THREE.Object3D();
+		dummy.position.x = data.center[0];
+		dummy.position.z = data.center[1];
+		dummy.scale.x = data.width;
+		dummy.scale.z = data.height;
+
+		dummy.updateMatrix();
+
+		const meshIndex = cubeInstance.count;
+		cubeInstance.count++;
+		cubeInstance.setColorAt(meshIndex, companyColor);
+		cubeInstance.setMatrixAt(meshIndex, dummy.matrix);
+
+		cubeInstance.instanceMatrix.needsUpdate = true;
+		cubeInstance.instanceColor.needsUpdate = true;
+		cubeInstance.needsUpdate = true;
+
+		return { mesh: dummy, isInstance: true, meshIndex };
+	} else {
+		const geometry = new THREE.BufferGeometry();
+
+		const geometryAttributes = data.attributes;
+		for (const key in geometryAttributes) {
+			if (Object.hasOwnProperty.call(geometryAttributes, key)) {
+				const value = geometryAttributes[key];
+				geometry.setAttribute(
+					key,
+					new THREE.BufferAttribute(value.array, value.itemSize)
+				);
+			}
 		}
+
+
+		const mesh = new THREE.Mesh(
+			geometry,
+			new THREE.MeshPhongMaterial({
+				color: companyColor,
+			})
+		);
+		mesh.rotation.x = Math.PI / 2;
+
+		mesh.position.y = 1 + Math.random() * 0.1;
+
+		scene.add(mesh);
+
+		return { mesh };
 	}
-
-
-	const mesh = new THREE.Mesh(
-		geometry,
-		new THREE.MeshPhongMaterial({
-			color: new THREE.Color(getCompanyColor(name)),
-		})
-	);
-	mesh.rotation.x = Math.PI / 2;
-
-	mesh.position.y = 1 + Math.random() * 0.1;
-
-	scene.add(mesh);
-
-	return mesh;
 }
 
 
@@ -263,16 +296,21 @@ const minDate = new Date('Thu Feb 02 2010').getTime();
 async function parseRecords(records) {
 	for (let i = 0; i < records.length; i++) {
 		const element = records[i];
-		spawnHilbertMesh(element.asset_start, element.asset_end, element.to_org || "unknown").then(mesh => {
+		spawnHilbertMesh(element.asset_start, element.asset_end, element.to_org || "unknown").then(({ mesh, meshIndex, isInstance }) => {
 			const transfer_timestamp = new Date(element.transfer_date).getTime();
 			const previous_timestamp = new Date(element.previous_date).getTime();
 			const delta = transfer_timestamp - previous_timestamp;
 
 			mesh.position.y = ((transfer_timestamp - minDate) / (Date.now() - minDate)) * config.mapHeight * config.scaleMultiplier;
 			mesh.position.y += Math.random() * 0.01 * config.mapHeight * config.scaleMultiplier;
-			//mesh.scale.z = (delta / Date.now()) * config.mapHeight * config.scaleMultiplier;
 
 			mesh.userData = element;
+
+			if (isInstance) {
+				mesh.updateMatrix();
+				cubeInstance.setMatrixAt(meshIndex, mesh.matrix);
+				cubeInstance.instanceMatrix.needsUpdate = true;
+			}
 		})
 
 		if (i % config.geometryBatchSize === 0 && i !== 0) {

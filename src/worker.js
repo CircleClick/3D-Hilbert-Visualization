@@ -46,27 +46,41 @@ self.onmessage = ({ data: { type, data, id } }) => {
 			getHilbertOutline(data);
 			break;
 		case "hilbert_geometry":
-			const geometry = hilbertGeometry(data.start, data.end, data.geometryOptions).toNonIndexed();
+			const result = hilbertGeometry(data.start, data.end, data.geometryOptions);
 
-			const attributes = {};
-
-			for (const key in geometry.attributes) {
-				if (Object.hasOwnProperty.call(geometry.attributes, key)) {
-					const element = geometry.attributes[key];
-					attributes[key] = {
-						array: element.array,
-						itemSize: element.itemSize,
-					};
+			if (result.isBufferGeometry) {
+				const attributes = {};
+	
+				for (const key in result.attributes) {
+					if (Object.hasOwnProperty.call(result.attributes, key)) {
+						const element = result.attributes[key];
+						attributes[key] = {
+							array: element.array,
+							itemSize: element.itemSize,
+						};
+					}
 				}
+	
+				queueMessage({
+					data: {
+						attributes,
+						groups: result.groups,
+					},
+					id: data.id,
+				});
+			} else {
+				//let the main thread know to instance a cube instead of creating a buffer geometry
+				queueMessage({
+					data: {
+						isCube: true,
+						width: result.width,
+						height: result.height,
+						center: result.center,
+					},
+					id: data.id,
+				});
 			}
 
-			queueMessage({
-				data: {
-					attributes,
-					groups: geometry.groups,
-				},
-				id: data.id,
-			});
 			break;
 		default:
 			console.error("Unknown message type", type);

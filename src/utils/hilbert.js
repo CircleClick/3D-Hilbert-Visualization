@@ -129,20 +129,6 @@ export function outlinePoints(points) {
 	};
 
 
-	const findMinMaxXY = () => {
-		let minX, minY, maxX, maxY;
-
-		for (let index = 0; index < points.length; index++) {
-			const point = points[index];
-			const [x, y] = point;
-			if (!minX || x < minX) minX = x;
-			if (!minY || y < minY) minY = y;
-			if (!maxX || x > maxX) maxX = x;
-			if (!maxY || y > maxY) maxY = y;
-		}
-
-		return { minX, minY, maxX, maxY };
-	}
 
 	// fill in the grid
 	for (let index = 0; index < points.length; index++) {
@@ -240,6 +226,51 @@ export function outlinePoints(points) {
 		}
 	}
 
+	// const findMinMaxXY = (array) => {
+	// 	let minX, minY, maxX, maxY;
+	// 	for (let index = 0; index < array.length; index++) {
+	// 		const point = array[index];
+	// 		const [x, y] = point;
+	// 		if (!minX || x < minX) minX = x;
+	// 		if (!minY || y < minY) minY = y;
+	// 		if (!maxX || x > maxX) maxX = x;
+	// 		if (!maxY || y > maxY) maxY = y;
+	// 	}
+
+	// 	return { minX, minY, maxX, maxY };
+	// }
+	// //check if the outline is a rectangle
+	// const { minX, minY, maxX, maxY } = findMinMaxXY(outline);
+
+	// const width = maxX - minX;
+	// const height = maxY - minY;
+	// const center = [(minX + maxX) / 2, (minY + maxY) / 2];
+
+	// let isRectangle = true;
+	// for (let i = 0; i < outline.length; i++) {
+	// 	const point = outline[i];
+	// 	const x = point[0];
+	// 	const y = point[1];
+
+	// 	if (x !== minX && x !== maxX && y !== minY && y !== maxY) {
+	// 		isRectangle = false;
+	// 		break;
+	// 	}
+	// }
+
+	// if (isRectangle) {
+	// 	console.log('is rectangle');
+	// 	return {
+	// 		rect: {
+	// 			x: center[0],
+	// 			y: center[1],
+	// 			width,
+	// 			height,
+	// 		}
+	// 	}
+	// } else {
+	// 	console.log('is not rectangle');
+	// }
 
 	return outline;
 }
@@ -281,19 +312,7 @@ const checkIfPointsMakeRectangle = (points) => {
 
 	if (pointsInRectangle.length / area < 0.9) return false;
 
-	const geometry = new BoxGeometry(
-		(maxX - minX) * config.scaleMultiplier,
-		(maxY - minY) * config.scaleMultiplier,
-		1
-	);
-
-	geometry.translate(
-		(minX + (maxX - minX) / 2) * config.scaleMultiplier,
-		(minY + (maxY - minY) / 2) * config.scaleMultiplier,
-		0.5
-	);
-
-	return geometry;
+	return { minX, minY, maxX, maxY };
 }
 
 /**
@@ -310,7 +329,14 @@ export function hilbertGeometry(start, end, geometryOptions = {}) {
 
 	const rectangle = checkIfPointsMakeRectangle(points);
 	if (rectangle) {
-		return rectangle;
+		const width = rectangle.maxX - rectangle.minX;
+		const height = rectangle.maxY - rectangle.minY;
+		const center = [rectangle.minX + width / 2, rectangle.minY + height / 2];
+		return {
+			width: width * config.scaleMultiplier,
+			height: height * config.scaleMultiplier,
+			center: [center[0] * config.scaleMultiplier, center[1] * config.scaleMultiplier],
+		};
 	} else {
 		const outline = outlinePoints(points);
 		const shape = new Shape();
