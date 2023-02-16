@@ -23,9 +23,13 @@ if (query_vars.api_url) {
 	api_url = query_vars.api_url;
 }
 
-let IP_BLOCK = 67;
 if (query_vars.ip_block) {
-	IP_BLOCK = parseInt(query_vars.ip_block);
+	const IP_BLOCK = parseInt(query_vars.ip_block);
+
+	fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async function (data) {
+		moveCameraToHilbert(data[Math.round(data.length / 2)].asset_start);
+		parseRecords(data);
+	});
 }
 
 /*
@@ -285,13 +289,22 @@ async function spawnHilbertMesh(start, end, name = 'hilbert') {
 }
 
 
-fetch(api_url + '/list/' + IP_BLOCK).then(data => data.json()).then(async function (data) {
-	moveCameraToHilbert(data[Math.round(data.length / 2)].asset_start);
-
-	parseRecords(data);
-});
-
 const minDate = new Date('Thu Feb 02 2010').getTime();
+
+window.addEventListener('message', async (event) => {
+	const { data } = event;
+	if (data.type === 'add_ranges') {
+		await parseRecords(data.records);
+	} else if (data.type === 'add_range') {
+		await parseRecords([data.record]);
+	} else if (data.type === 'move_camera') {
+		const point = distance2Point(data.distance);
+		controls.target.x = point[0];
+		controls.target.z = point[1];
+		controls.target.y = data.height ?? 0;
+		controls.update();
+	}
+});
 
 async function parseRecords(records) {
 	for (let i = 0; i < records.length; i++) {
@@ -319,6 +332,7 @@ async function parseRecords(records) {
 
 	}
 }
+
 function sleep(time) {
 	return new Promise((resolve) => setTimeout(resolve, time));
 }
