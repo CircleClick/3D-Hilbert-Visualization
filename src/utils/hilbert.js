@@ -128,8 +128,6 @@ export function outlinePoints(points) {
 		}
 	};
 
-
-
 	// fill in the grid
 	for (let index = 0; index < points.length; index++) {
 		const point = points[index];
@@ -207,7 +205,6 @@ export function outlinePoints(points) {
 		if (direction.y < 0) direction.y = -0.5;
 		if (direction.y > 0) direction.y = 0.5;
 
-
 		point[0] += direction.x;
 		point[1] += direction.y;
 	}
@@ -225,52 +222,6 @@ export function outlinePoints(points) {
 			outline.splice(i, 1);
 		}
 	}
-
-	// const findMinMaxXY = (array) => {
-	// 	let minX, minY, maxX, maxY;
-	// 	for (let index = 0; index < array.length; index++) {
-	// 		const point = array[index];
-	// 		const [x, y] = point;
-	// 		if (!minX || x < minX) minX = x;
-	// 		if (!minY || y < minY) minY = y;
-	// 		if (!maxX || x > maxX) maxX = x;
-	// 		if (!maxY || y > maxY) maxY = y;
-	// 	}
-
-	// 	return { minX, minY, maxX, maxY };
-	// }
-	// //check if the outline is a rectangle
-	// const { minX, minY, maxX, maxY } = findMinMaxXY(outline);
-
-	// const width = maxX - minX;
-	// const height = maxY - minY;
-	// const center = [(minX + maxX) / 2, (minY + maxY) / 2];
-
-	// let isRectangle = true;
-	// for (let i = 0; i < outline.length; i++) {
-	// 	const point = outline[i];
-	// 	const x = point[0];
-	// 	const y = point[1];
-
-	// 	if (x !== minX && x !== maxX && y !== minY && y !== maxY) {
-	// 		isRectangle = false;
-	// 		break;
-	// 	}
-	// }
-
-	// if (isRectangle) {
-	// 	console.log('is rectangle');
-	// 	return {
-	// 		rect: {
-	// 			x: center[0],
-	// 			y: center[1],
-	// 			width,
-	// 			height,
-	// 		}
-	// 	}
-	// } else {
-	// 	console.log('is not rectangle');
-	// }
 
 	return outline;
 }
@@ -308,7 +259,6 @@ const checkIfPointsMakeRectangle = (points) => {
 			pointsInRectangle.push(point);
 		}
 	}
-
 
 	if (pointsInRectangle.length / area < 0.9) return false;
 
