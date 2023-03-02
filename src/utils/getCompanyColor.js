@@ -8,7 +8,7 @@ export default function getCompanyColor (name) {
 		return acc + char.charCodeAt(0);
 	}, 0);
 
-	const hue = hash % 360;
+	const hue = hash * 0.2 % 360;
 	const saturation = 75;
 	const lightness = 60;
 
