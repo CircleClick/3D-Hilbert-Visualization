@@ -242,7 +242,7 @@ const diagonalDirections = [
 
 const allDirections = cardinalDirections.concat(diagonalDirections);
 
-const checkIfPointsMakeRectangle = (points) => {
+const checkIfPointsMakeRectangle = (points, accuracy = 0.9) => {
 	const { minX, minY, maxX, maxY } = getMinMax(points);
 
 	const width = maxX - minX;
@@ -260,7 +260,7 @@ const checkIfPointsMakeRectangle = (points) => {
 		}
 	}
 
-	if (pointsInRectangle.length / area < 0.9) return false;
+	if (pointsInRectangle.length / area < accuracy) return false;
 
 	return { minX, minY, maxX, maxY };
 }

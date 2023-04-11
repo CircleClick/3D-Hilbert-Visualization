@@ -13,6 +13,7 @@ function queueMessage (message) {
 		}, 10);
 	}
 }
+
 function checkMessageQueue () {
 	if (messageQueue.length > 0) {
 		self.postMessage(messageQueue);

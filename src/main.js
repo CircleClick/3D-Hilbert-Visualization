@@ -69,6 +69,7 @@ const cubeMaterial = new THREE.MeshPhongMaterial({
 	color: 0xffffff,
 });
 const cubeInstance = new THREE.InstancedMesh(cubeGeometry, cubeMaterial, 65536);
+cubeInstance.frustumCulled = false;
 cubeInstance.setColorAt(0, new THREE.Color(0x00ff00));
 cubeInstance.count = 0;
 scene.add(cubeInstance);
