@@ -42,7 +42,7 @@ setInterval(() => {
 	const end = Math.max(a, b);
 
 	if (randomMesh) {
-		randomMesh.removeFromParent()
+		visualizer.removeMesh(randomMesh);
 	}
 
 	randomMesh = visualizer.spawnHilbertMesh(start, end, 10, 11, 0xffffff);

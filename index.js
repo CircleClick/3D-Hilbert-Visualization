@@ -135,7 +135,7 @@ export default class HilbertVisualizer {
 
 		const raycaster = new THREE.Raycaster();
 		raycaster.setFromCamera(mouse, this.camera);
-		const intersects = raycaster.intersectObjects(this.scene.children);
+		const intersects = raycaster.intersectObjects(this.items);
 		if (intersects.length > 0) {
 			const intersect = intersects[0];
 			if (intersect.object.userData) {
@@ -198,6 +198,7 @@ export default class HilbertVisualizer {
 			})
 		);
 		this.scene.add(mesh);
+		this.items.push(mesh);
 
 		mesh.position.y = startHeight;
 		mesh.scale.y = endHeight - startHeight;
@@ -206,7 +207,18 @@ export default class HilbertVisualizer {
 		return mesh;
 	}
 
-	destroy () {
+	removeMesh(mesh) {
+		this.scene.remove(mesh);
+		for (let i = 0; i < this.items.length; i++) {
+			const item = this.items[i];
+			if (item === mesh) {
+				this.items.splice(i, 1);
+				break;
+			}
+		}
+	}
+
+	destroy() {
 		this.destroying = true;
 		this.resizeObserver.disconnect();
 		this.renderer.domElement.removeEventListener('mousedown', this.mouseDownListener);
