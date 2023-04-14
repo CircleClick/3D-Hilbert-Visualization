@@ -8,6 +8,7 @@ const visualizer = new HilbertVisualizer({
 document.body.appendChild(visualizer.renderer.domElement);
 
 
+
 visualizer.spawnHilbertMesh(0, 20, 0, 3, 0xc92a3d);
 visualizer.spawnHilbertMesh(21, 39, 0, 2, 0xf1a239);
 visualizer.spawnHilbertMesh(40, 48, 0, 3, 0x3ca7db);
@@ -28,6 +29,13 @@ visualizer.spawnHilbertMesh(170, 170, 0, 1, 0xffffff, {
 
 //move the camera to the white cube
 visualizer.moveCameraToHilbert(170, 10)
+
+
+//add an IP address!
+function ip2int(ip) {
+    return ip.split('.').reduce(function(ipInt, octet) { return (ipInt<<8) + parseInt(octet, 10)}, 0) >>> 0;
+}
+visualizer.spawnHilbertMesh(ip2int('0.0.1.128'), ip2int('0.0.1.255'), 5, 5.1, 0x3d6be0);
 
 
 
