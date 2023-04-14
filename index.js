@@ -122,10 +122,6 @@ export default class HilbertVisualizer {
 	}
 
 	clickListener(e) {
-		const totalDist = Math.abs(e.clientX - this.lastMouseDown.x) + Math.abs(e.clientY - this.lastMouseDown.y);
-		if (totalDist > 5) {
-			return
-		}
 		const mouse = new THREE.Vector2();
 		mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 		mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
