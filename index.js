@@ -1,16 +1,14 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import "./main.css";
 import { distance2Point, hilbertGeometry } from "./utils/hilbert";
 //import Stats from "three/examples/jsm/libs/stats.module";
 
 const DefaultOptions = {
 	hilbertSize: 16,
 }
-class HilbertVisualizer {
+export default class HilbertVisualizer {
 	constructor(userOptions) {
 		this.options = Object.assign({}, DefaultOptions, userOptions);
-
 		this.gridSize = Math.sqrt(Math.pow(2, this.options.hilbertSize));
 
 		/*
@@ -214,12 +212,3 @@ window.addEventListener('message', async (event) => {
 			break;
 	}
 });
-
-
-const visualizer = new HilbertVisualizer();
-document.body.appendChild(visualizer.renderer.domElement);
-
-visualizer.spawnHilbertMesh(0, 20, 0, 3, 0xc92a3d, { id: 1 });
-visualizer.spawnHilbertMesh(21, 39, 1, 2, 0xf1a239, { id: 2 });
-visualizer.spawnHilbertMesh(40, 48, 2, 3, 0x3ca7db, { id: 3 });
-visualizer.spawnHilbertMesh(0, 255, -1, 0, 0x3d6be0, { id: 4 });

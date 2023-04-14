@@ -1,11 +1,12 @@
 {
 	"name": "hilbert",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"build": "webpack --mode=production",
-		"start": "npx webpack serve"
+		"build": "cd example && npm run build",
+		"start": "cd example && npm run dev",
+		"dev": "npm run start"
 	},
 	"repository": {
 		"type": "git",
@@ -18,18 +19,6 @@
 	},
 	"homepage": "https://github.com/circleclick/3D-Hilbert-Visualization#readme",
 	"dependencies": {
-		"copy-webpack-plugin": "^10.2.4",
-		"css-loader": "^6.6.0",
-		"file-loader": "^6.2.0",
-		"html-loader": "^3.1.0",
-		"html-webpack-plugin": "^5.5.0",
-		"stats-js": "^1.0.1",
-		"style-loader": "^3.3.1",
-		"three": "^0.151.3",
-		"webpack": "^5.69.1",
-		"webpack-cli": "^4.9.2"
-	},
-	"devDependencies": {
-		"webpack-dev-server": "^4.7.4"
+		"three": "^0.151.3"
 	}
 }
