@@ -33,6 +33,11 @@ visualizer.spawnHilbertMesh(
 	0xffffff, //color of the geometry
 	{ onclick: ()=>{alert("I've been clicked!")} } // optional data, onClick property will be called when the user clicks the geometry
 );
+
+visualizer.moveCameraToHilbert(
+	255, //move the camera to the end of our new mesh
+	10 //put the camera "back" 10 units so we can see the scene better
+);
 ```
 
 `hilbertSize` indicates how big your "grid" is going to be, `32` covers all of IPv4 space. The number is fed into Math.pow(2, hilbertSize) to inform the hilbert curve algorithm on where to place elements.
