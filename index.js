@@ -91,6 +91,7 @@ export default class HilbertVisualizer {
 
 
 	draw() {
+		if (this.destroying) return;
 		//if (this.stats) this.stats.begin();
 		requestAnimationFrame(this.draw.bind(this));
 		const delta = Math.min(1, Math.max(0, (performance.now() - this.lastFrame) / 1000));
@@ -199,6 +200,17 @@ export default class HilbertVisualizer {
 
 		mesh.userData = userData;
 		return mesh;
+	}
+
+	destroy () {
+		this.destroying = true;
+		this.resizeObserver.disconnect();
+		this.renderer.domElement.removeEventListener('mousedown', this.mouseDownListener);
+		this.renderer.domElement.removeEventListener('touchstart', this.touchStartListener);
+		this.renderer.domElement.removeEventListener('click', this.clickListener);
+		this.renderer.domElement.removeFromParent();
+		this.controls.dispose();
+		this.renderer.dispose();
 	}
 }
 

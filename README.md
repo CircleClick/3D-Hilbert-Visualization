@@ -11,7 +11,9 @@ Download this repo, run NPM install, then start the example server using `npm ru
 
 # installing
 Add to your project by running 
-```npm i --save https://github.com/CircleClick/3D-Hilbert-Visualization```
+```sh
+npm i --save https://github.com/CircleClick/3D-Hilbert-Visualization
+```
 
 # usage
 
