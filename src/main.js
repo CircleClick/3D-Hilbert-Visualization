@@ -1,13 +1,11 @@
 import * as THREE from "three";
-import Stats from "three/examples/jsm/libs/stats.module";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import "./main.css";
 import { distance2Point, hilbertGeometry } from "./utils/hilbert";
+//import Stats from "three/examples/jsm/libs/stats.module";
 
 const DefaultOptions = {
-	hilbertSize: 32,
-
-
+	hilbertSize: 16,
 }
 class HilbertVisualizer {
 	constructor(userOptions) {
@@ -89,7 +87,7 @@ class HilbertVisualizer {
 
 
 	draw() {
-		if (this.stats) this.stats.begin();
+		//if (this.stats) this.stats.begin();
 		requestAnimationFrame(this.draw.bind(this));
 		const delta = Math.min(1, Math.max(0, (performance.now() - this.lastFrame) / 1000));
 		this.lastFrame = performance.now();
@@ -97,7 +95,7 @@ class HilbertVisualizer {
 		this.controls.update();
 
 		this.renderer.render(this.scene, this.camera);
-		if (this.stats) this.stats.end();
+		//if (this.stats) this.stats.end();
 	};
 
 	mouseDownListener(e) {
@@ -221,6 +219,7 @@ window.addEventListener('message', async (event) => {
 const visualizer = new HilbertVisualizer();
 document.body.appendChild(visualizer.renderer.domElement);
 
-visualizer.spawnHilbertMesh(0, 20, 0, 3, 0xff0000, { test: true });
-visualizer.spawnHilbertMesh(21, 39, 1, 2, 0x00ffff, { test: true });
-visualizer.spawnHilbertMesh(40, 48, 2, 3, 0xffffff, { test: true });
+visualizer.spawnHilbertMesh(0, 20, 0, 3, 0xc92a3d, { id: 1 });
+visualizer.spawnHilbertMesh(21, 39, 1, 2, 0xf1a239, { id: 2 });
+visualizer.spawnHilbertMesh(40, 48, 2, 3, 0x3ca7db, { id: 3 });
+visualizer.spawnHilbertMesh(0, 255, -1, 0, 0x3d6be0, { id: 4 });
