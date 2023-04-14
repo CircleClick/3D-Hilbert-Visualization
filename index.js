@@ -123,8 +123,16 @@ export default class HilbertVisualizer {
 
 	clickListener(e) {
 		const mouse = new THREE.Vector2();
-		mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-		mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+		//screen relative coordinates
+		// mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+		// mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+		//canvas relative coordinates
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		mouse.x = ((e.clientX - rect.left) / this.renderer.domElement.clientWidth) * 2 - 1;
+		mouse.y = -((e.clientY - rect.top) / this.renderer.domElement.clientHeight) * 2 + 1;
+
 		const raycaster = new THREE.Raycaster();
 		raycaster.setFromCamera(mouse, this.camera);
 		const intersects = raycaster.intersectObjects(this.scene.children);
