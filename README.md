@@ -13,8 +13,20 @@ Download this repo, run NPM install, then start the example server using `npm ru
 Add to your project by running 
 ```npm i --save https://github.com/CircleClick/3D-Hilbert-Visualization```
 
+# usage
+
+```js
+import HilbertVisualizer from '3DHilbertVisualizer';
+
+const visualizer = new HilbertVisualizer({
+	hilbertSize: 10,
+});
+```
+
+`hilbertSize` indicates how big your "grid" is going to be, `32` covers all of IPv4 space. The number is fed into Math.pow(2, hilbertSize) to inform the hilbert curve algorithm on where to place elements.
 
 ---
+# other
 ...
 
 Old example, for reference: 
