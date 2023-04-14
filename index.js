@@ -8,6 +8,8 @@ const DefaultOptions = {
 }
 export default class HilbertVisualizer {
 	constructor(userOptions) {
+		this.items = []; // keep track of all the hilbert meshes we add
+
 		this.options = Object.assign({}, DefaultOptions, userOptions);
 		this.gridSize = Math.sqrt(Math.pow(2, this.options.hilbertSize));
 
@@ -164,7 +166,7 @@ export default class HilbertVisualizer {
 	async spawnHilbertMesh(start, end, startHeight = 0, endHeight = 1, color = 0xffffff, userData = {}) {
 		const data = await hilbertGeometry(start, end);
 		const geometry = new THREE.BufferGeometry();
-	
+
 		const geometryAttributes = data.attributes;
 		for (const key in geometryAttributes) {
 			if (Object.hasOwnProperty.call(geometryAttributes, key)) {
@@ -175,10 +177,10 @@ export default class HilbertVisualizer {
 				);
 			}
 		}
-	
+
 		geometry.rotateX(Math.PI / 2);
 		geometry.translate(0.5, 1, 0.5);
-	
+
 		const mesh = new THREE.Mesh(
 			geometry,
 			new THREE.MeshPhongMaterial({
@@ -186,10 +188,10 @@ export default class HilbertVisualizer {
 			})
 		);
 		this.scene.add(mesh);
-	
+
 		mesh.position.y = startHeight;
 		mesh.scale.y = endHeight - startHeight;
-	
+
 		mesh.userData = userData;
 		return mesh;
 	}
