@@ -7,6 +7,10 @@ const DefaultOptions = {
 	hilbertSize: 16,
 }
 export default class HilbertVisualizer {
+	/*
+	** Constructor
+	* @param {Object} userOptions - Options to override the default options
+	*/
 	constructor(userOptions) {
 		this.items = []; // keep track of all the hilbert meshes we add
 
@@ -130,14 +134,15 @@ export default class HilbertVisualizer {
 		if (intersects.length > 0) {
 			const intersect = intersects[0];
 			if (intersect.object.userData) {
+				if (intersect.object.userData.onclick) {
+					intersect.object.userData.onclick(e);
+				}
+
 				//send message to parent window
-				window.parent.postMessage({
-					type: 'click',
-					data: intersect.object.userData,
-				});
-				console.log('clicked data:', intersect.object.userData);
-			} else {
-				console.log('Click', intersect);
+				// window.parent.postMessage({
+				// 	type: 'click',
+				// 	data: intersect.object.userData,
+				// });
 			}
 		}
 	}
@@ -163,8 +168,8 @@ export default class HilbertVisualizer {
 		)
 	}
 
-	async spawnHilbertMesh(start, end, startHeight = 0, endHeight = 1, color = 0xffffff, userData = {}) {
-		const data = await hilbertGeometry(start, end);
+	spawnHilbertMesh(start, end, startHeight = 0, endHeight = 1, color = 0xffffff, userData = {}) {
+		const data = hilbertGeometry(start, end);
 		const geometry = new THREE.BufferGeometry();
 
 		const geometryAttributes = data.attributes;
@@ -199,15 +204,15 @@ export default class HilbertVisualizer {
 
 
 
-window.addEventListener('message', async (event) => {
+window.addEventListener('message', (event) => {
 	const { data } = event;
 	switch (data.type) {
 		case 'add_range':
-			await spawnHilbertMesh(data.start, data.end, data.startHeight, data.endHeight, data.color, data.userData);
+			spawnHilbertMesh(data.start, data.end, data.startHeight, data.endHeight, data.color, data.userData);
 			break;
 		case 'add_ranges':
 			for (const range of data.ranges) {
-				await spawnHilbertMesh(range.start, range.end, data.startHeight, data.endHeight, range.color, range.userData);
+				spawnHilbertMesh(range.start, range.end, data.startHeight, data.endHeight, range.color, range.userData);
 			}
 		case 'move_camera':
 			moveCameraToHilbert(data.point, data.cameraDistance);
