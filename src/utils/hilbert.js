@@ -1,5 +1,4 @@
-import { BoxGeometry, ExtrudeGeometry, Shape, Vector2 } from "three";
-import config from "../config";
+import { ExtrudeGeometry, Shape, Vector2 } from "three";
 
 /**
  * Hilbert curve rotation function
@@ -19,36 +18,6 @@ function rot(n, xy, rx, ry) {
 		xy.push(xy.shift());
 	}
 }
-
-const getMinMax = (points) => {
-	let minX = Infinity;
-	let minY = Infinity;
-	let maxX = -Infinity;
-	let maxY = -Infinity;
-
-	for (let index = 0; index < points.length; index++) {
-		const point = points[index];
-		if (point[0] < minX) {
-			minX = point[0];
-		}
-		if (point[0] > maxX) {
-			maxX = point[0];
-		}
-		if (point[1] < minY) {
-			minY = point[1];
-		}
-		if (point[1] > maxY) {
-			maxY = point[1];
-		}
-	}
-
-	return {
-		minX,
-		minY,
-		maxX,
-		maxY,
-	};
-};
 
 // Note: this function will start breaking down for n > 2^26 (MAX_SAFE_INTEGER = 2^5 3)
 // x,y: cell coordinates, n: sqrt of num cells (square side size)
@@ -95,46 +64,47 @@ export function distance2Point(distance) {
 	return coordinates;
 }
 
+
+
+const checkGridExists = (grid, x, y) => {
+	return grid.hasOwnProperty(x) && grid[x].hasOwnProperty(y);
+};
+
+const getGridValue = (grid, x, y) => {
+	if (checkGridExists(grid, x, y)) {
+		return grid[x][y];
+	}
+	return false;
+};
+const setGridValue = (grid, outlineStart, x, y, value) => {
+	if (!grid[x]) {
+		grid[x] = {};
+	}
+	grid[x][y] = value;
+
+	if (value === 2) {
+		if (!outlineStart.x) {
+			outlineStart.x = x;
+			outlineStart.y = y;
+		}
+	}
+};
+
 /**
  * get the outline of a set of points
  * @param {Array} points [x, y]
  * @returns Array [[x, y]...]
  */
-export function outlinePoints(points) {
-	const grid = {};
+export function outlinePoints(points, margin = 0.05) {
+	let grid = {};
 	const outlineStart = { x: false, y: false };
-
-	const checkGridExists = (x, y) => {
-		return grid.hasOwnProperty(x) && grid[x].hasOwnProperty(y);
-	};
-
-	const getGridValue = (x, y) => {
-		if (checkGridExists(x, y)) {
-			return grid[x][y];
-		}
-		return false;
-	};
-	const setGridValue = (x, y, value) => {
-		if (!grid[x]) {
-			grid[x] = {};
-		}
-		grid[x][y] = value;
-
-		if (value === 2) {
-			if (!outlineStart.x) {
-				outlineStart.x = x;
-				outlineStart.y = y;
-			}
-		}
-	};
 
 	// fill in the grid
 	for (let index = 0; index < points.length; index++) {
 		const point = points[index];
 		const [x, y] = point;
-		setGridValue(x, y, 1);
+		setGridValue(grid, outlineStart, x, y, 1);
 	}
-
 
 	for (let index = 0; index < points.length; index++) {
 		const point = points[index];
@@ -146,7 +116,7 @@ export function outlinePoints(points) {
 			const direction = allDirections[i];
 			const x = currentPoint.x + direction.x;
 			const y = currentPoint.y + direction.y;
-			if (getGridValue(x, y) !== 1) setGridValue(x, y, 2);
+			if (getGridValue(grid, x, y) !== 1) setGridValue(grid, outlineStart, x, y, 2);
 		}
 	}
 
@@ -162,9 +132,9 @@ export function outlinePoints(points) {
 			const direction = allDirections[index];
 			const x = currentPoint.x + direction.x;
 			const y = currentPoint.y + direction.y;
-			if (getGridValue(x, y) === 2) {
+			if (getGridValue(grid, x, y) === 2) {
 				nextPoint = { x, y };
-				setGridValue(x, y, 3);
+				setGridValue(grid, outlineStart, x, y, 3);
 				break;
 			}
 		}
@@ -194,16 +164,16 @@ export function outlinePoints(points) {
 			const x = point[0] + checkDirection.x;
 			const y = point[1] + checkDirection.y;
 
-			if (getGridValue(x, y) === 1) {
+			if (getGridValue(grid, x, y) === 1) {
 				direction.x += checkDirection.x;
 				direction.y += checkDirection.y;
 			}
 		}
 
-		if (direction.x < 0) direction.x = -0.5;
-		if (direction.x > 0) direction.x = 0.5;
-		if (direction.y < 0) direction.y = -0.5;
-		if (direction.y > 0) direction.y = 0.5;
+		if (direction.x < 0) direction.x = -(0.5 + margin);
+		if (direction.x > 0) direction.x = (0.5 + margin);
+		if (direction.y < 0) direction.y = -(0.5 + margin);
+		if (direction.y > 0) direction.y = (0.5 + margin);
 
 		point[0] += direction.x;
 		point[1] += direction.y;
@@ -223,6 +193,7 @@ export function outlinePoints(points) {
 		}
 	}
 
+
 	return outline;
 }
 
@@ -232,38 +203,13 @@ const cardinalDirections = [
 	{ x: 0, y: 1 },
 	{ x: 0, y: -1 },
 ];
-
 const diagonalDirections = [
 	{ x: 1, y: 1 },
 	{ x: -1, y: -1 },
 	{ x: 1, y: -1 },
 	{ x: -1, y: 1 },
 ];
-
 const allDirections = cardinalDirections.concat(diagonalDirections);
-
-const checkIfPointsMakeRectangle = (points, accuracy = 0.9) => {
-	const { minX, minY, maxX, maxY } = getMinMax(points);
-
-	const width = maxX - minX;
-	const height = maxY - minY;
-	const area = width * height;
-
-	const pointsInRectangle = [];
-
-	for (let i = 0; i < points.length; i++) {
-		const point = points[i];
-		const [x, y] = point;
-
-		if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-			pointsInRectangle.push(point);
-		}
-	}
-
-	if (pointsInRectangle.length / area < accuracy) return false;
-
-	return { minX, minY, maxX, maxY };
-}
 
 /**
  * Builds a ShapeGeometry for a range of points on a Hilbert curve
@@ -277,35 +223,23 @@ export function hilbertGeometry(start, end, geometryOptions = {}) {
 		points.push(distance2Point(i));
 	}
 
-	const rectangle = checkIfPointsMakeRectangle(points);
-	if (rectangle) {
-		const width = rectangle.maxX - rectangle.minX;
-		const height = rectangle.maxY - rectangle.minY;
-		const center = [rectangle.minX + width / 2, rectangle.minY + height / 2];
-		return {
-			width: width * config.scaleMultiplier,
-			height: height * config.scaleMultiplier,
-			center: [center[0] * config.scaleMultiplier, center[1] * config.scaleMultiplier],
-		};
-	} else {
-		const outline = outlinePoints(points);
-		const shape = new Shape();
+	const outline = outlinePoints(points);
+	const shape = new Shape();
 
-		for (let index = 0; index < outline.length; index++) {
-			const element = outline[index];
-			if (index === 0) {
-				shape.moveTo(element[0] * config.scaleMultiplier, element[1] * config.scaleMultiplier);
-			} else {
-				shape.lineTo(element[0] * config.scaleMultiplier, element[1] * config.scaleMultiplier);
-			}
+	for (let index = 0; index < outline.length; index++) {
+		const element = outline[index];
+		if (index === 0) {
+			shape.moveTo(element[0], element[1]);
+		} else {
+			shape.lineTo(element[0], element[1]);
 		}
-
-		const geometry = new ExtrudeGeometry(shape, {
-			depth: 1,
-			bevelEnabled: false,
-			...geometryOptions,
-		});
-
-		return geometry;
 	}
+
+	const geometry = new ExtrudeGeometry(shape, {
+		depth: 1,
+		bevelEnabled: false,
+		...geometryOptions,
+	});
+
+	return geometry;
 }
