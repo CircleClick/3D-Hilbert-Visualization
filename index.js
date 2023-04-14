@@ -208,7 +208,7 @@ export default class HilbertVisualizer {
 		this.renderer.domElement.removeEventListener('mousedown', this.mouseDownListener);
 		this.renderer.domElement.removeEventListener('touchstart', this.touchStartListener);
 		this.renderer.domElement.removeEventListener('click', this.clickListener);
-		this.renderer.domElement.removeFromParent();
+		this.renderer.domElement.remove();
 		this.controls.dispose();
 		this.renderer.dispose();
 	}
